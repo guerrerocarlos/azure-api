@@ -1,0 +1,27 @@
+{
+  "name": "azure-api",
+  "version": "0.0.2",
+  "description": "A really simple promise-based NodeJS API for creation and configuration of Azure resources.",
+  "main": "azure-api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codecapers/azure-api"
+  },
+  "keywords": [
+    "azure",
+    "provision",
+    "cloud",
+    "vm",
+    "virtual-machine",
+    "virtual-network"
+  ],
+  "author": "ashley@codecapers.com.au",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/codecapers/azure-api/issues"
+  },
+  "homepage": "https://github.com/codecapers/azure-api"
+}
