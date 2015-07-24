@@ -139,10 +139,10 @@ var azure = {
 						}
 					})
 					.catch(function (err) {
-						console.error('Failed to start VM');
+						console.error('Error checking VM status.');
 						console.error(err.stack);
 
-						reject(err);
+						checkVmRunning();
 					});
 			};
 
