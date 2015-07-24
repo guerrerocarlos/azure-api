@@ -4,7 +4,6 @@ var exec = require('child-process-promise').exec;
 var quote = require('quote');
 var Q = require('q');
 var E = require('linq');
-var readAllLines = require('./read-all-lines');
 var SshClient = require('ssh-promise');
 
 var azure = {
@@ -161,7 +160,7 @@ var azure = {
 		};
 
 		var ssh = new SshClient(sshConfig);
-		return ssh.exec(readAllLines(scriptFilePath));
+		return ssh.exec(fs.readFileSync(scriptFilePath).toString());
 	},
 
 };
