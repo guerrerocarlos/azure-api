@@ -5,6 +5,7 @@ var quote = require('quote');
 var Q = require('q');
 var E = require('linq');
 var SshClient = require('ssh-promise');
+var fs = require('fs');
 
 var azure = {
 	//
