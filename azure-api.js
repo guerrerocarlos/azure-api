@@ -36,7 +36,7 @@ var azure = {
 	//
 	// Create an Azure VM in an existing network.
 	//
-	createVM: function (vmName, networkName, imageName, user, pass, endpoints) {
+	createVM: function (vmName, networkName, imageName, user, pass, staticIP, endpoints) {
 
 		console.log('Creating vm ' + vmName + ' on network ' + networkName);
 
@@ -52,6 +52,11 @@ var azure = {
 			quote(networkName),
 			'--ssh',
 		];
+
+		if (staticIP) {
+			args.push('--static-ip');
+			args.push(staticIP);
+		}
 
 		return exec(args.join(' '))
 			.then(function (output) {
