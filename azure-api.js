@@ -125,7 +125,7 @@ var azure = {
 	// Returns a promise that is resolved when the VM is running.
 	//
 	waitVmRunning: function (vmName) {
-		console.log('Waiting for VM to be running');
+		console.log(vmName + ': Waiting for VM to be running');
 
 		return Q.Promise(function (resolve, reject) {
 			var checkVmRunning = function () {
@@ -133,18 +133,18 @@ var azure = {
 					.then(function (status) {
 						var isRunning = status.InstanceStatus === 'ReadyRole';
 						if (isRunning) {
-							console.log('VM is running');
+							console.log(vmName + ': VM is running');
 
 							resolve();
 						}
 						else {
-							console.log('VM not yet running, current status: ' + status.InstanceStatus);
+							console.log(vmName + ': VM not yet running, current status: ' + status.InstanceStatus);
 
 							checkVmRunning();
 						}
 					})
 					.catch(function (err) {
-						console.error('Error checking VM status.');
+						console.error(vmName + ': Error checking VM status.');
 						console.error(err.stack);
 
 						checkVmRunning();
