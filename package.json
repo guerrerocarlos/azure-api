@@ -1,6 +1,6 @@
 {
   "name": "azure-api",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A really simple promise-based NodeJS API for creation and configuration of Azure resources.",
   "main": "azure-api.js",
   "scripts": {
@@ -23,5 +23,12 @@
   "bugs": {
     "url": "https://github.com/codecapers/azure-api/issues"
   },
-  "homepage": "https://github.com/codecapers/azure-api"
+  "homepage": "https://github.com/codecapers/azure-api",
+  "dependencies": {
+    "child-process-promise": "^1.1.0",
+    "linq": "^3.0.5",
+    "q": "^1.4.1",
+    "quote": "^0.4.0",
+    "ssh-promise": "^2.1.0"
+  }
 }
