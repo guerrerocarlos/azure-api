@@ -6,12 +6,16 @@ var Q = require('q');
 var E = require('linq');
 var SshClient = require('ssh-promise');
 var fs = require('fs');
+var assert = require('chai').assert;
 
 var azure = {
 	//
 	// Create an Azure network.
 	//
 	createNetwork: function (networkName, location) {
+
+		assert.isString(networkName);
+		assert.isString(location);
 
 		console.log('Creating network: ' + networkName);
 
@@ -37,6 +41,18 @@ var azure = {
 	// Create an Azure VM in an existing network.
 	//
 	createVM: function (vmName, networkName, imageName, user, pass, staticIP, endpoints) {
+		
+		assert.isString(vmName);
+		assert.isString(networkName);
+		assert.isString(imageName);
+		assert.isString(user);
+		assert.isString(pass);
+		if (staticIP) {
+			assert.isString(staticIP);
+		}
+		if (endpoints) {
+			assert.isArray(endpoints);
+		}
 
 		console.log('Creating vm ' + vmName + ' on network ' + networkName);
 
@@ -65,6 +81,10 @@ var azure = {
 				return output;
 			})
 			.then(function () {
+				if (!endpoints) {
+					return;
+				}
+
 				var endPointPromises = E.from(endpoints)
 					.select(function (endpoint) {
 						return azure.createEndPoint(vmName, endpoint.externalPort, endpoint.internalPort, endpoint.name);
@@ -79,6 +99,11 @@ var azure = {
 	// Create an endpoint on an existing Azure VM.
 	//
 	createEndPoint: function (vmName, externalPort, internalPort, endpointName) {
+
+		assert.isString(vmName);
+		assert.isString(externalPort);
+		assert.isString(internalPort);
+		assert.isString(endpointName);
 
 		console.log('Creating endpoint ' + endpointName + ' for ' + vmName);
 
@@ -106,6 +131,8 @@ var azure = {
 	//
 	getVmStatus: function (vmName) {
 
+		assert.isString(vmName);
+
 		var args = [
 			'azure',
 			'vm',
@@ -125,6 +152,9 @@ var azure = {
 	// Returns a promise that is resolved when the VM is running.
 	//
 	waitVmRunning: function (vmName) {
+
+		assert.isString(vmName);
+
 		console.log(vmName + ': Waiting for VM to be running');
 
 		return Q.Promise(function (resolve, reject) {
@@ -159,6 +189,12 @@ var azure = {
 	// Run a shell script on a particular Azure VM via ssh.
 	//
 	runSshScript: function (host, user, pass, scriptFilePath) {
+
+		assert.isString(host);
+		assert.isString(user);
+		assert.isString(pass);
+		assert.isString(scriptFilePath);
+
 		var sshConfig = {
 			host: host,
 			username: user,
