@@ -1,6 +1,6 @@
 {
   "name": "azure-api",
-  "version": "0.0.9",
+  "version": "0.0.14",
   "description": "A really simple promise-based NodeJS API for creation and configuration of Azure resources.",
   "main": "azure-api.js",
   "scripts": {
@@ -28,6 +28,7 @@
     "chai": "^3.2.0",
     "child-process-promise": "^1.1.0",
     "linq": "^3.0.5",
+    "mustache": "^2.1.3",
     "q": "^1.4.1",
     "quote": "^0.4.0",
     "ssh-promise": "^2.1.0"

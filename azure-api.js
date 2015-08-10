@@ -7,6 +7,8 @@ var E = require('linq');
 var SshClient = require('ssh-promise');
 var fs = require('fs');
 var assert = require('chai').assert;
+var Mustache = require('Mustache');
+var util = require('util');
 
 var azure = {
 	//
@@ -186,14 +188,17 @@ var azure = {
 	},
 
 	//
-	// Run a shell script on a particular Azure VM via ssh.
+	// Run a templated shell script on a particular Azure VM via ssh.
 	//
-	runSshScript: function (host, user, pass, scriptFilePath) {
+	runSshScript: function (host, user, pass, scriptTemplate, templateView) {
 
 		assert.isString(host);
 		assert.isString(user);
 		assert.isString(pass);
-		assert.isString(scriptFilePath);
+		assert.isString(scriptTemplate);
+		if (templateView) {
+			assert.isObject(templateView);
+		}
 
 		var sshConfig = {
 			host: host,
@@ -201,8 +206,56 @@ var azure = {
 			password: pass,
 		};
 
+		var scriptInstance = Mustache.render(scriptTemplate, templateView);
+
 		var ssh = new SshClient(sshConfig);
-		return ssh.exec(fs.readFileSync(scriptFilePath).toString());
+		return ssh.exec(scriptInstance);
+	},
+
+	//
+	// Run a templated shell script on a particular Azure VM via ssh.
+	//
+	runSshScriptFile: function (host, user, pass, scriptFilePath, templateView) {
+
+		assert.isString(host);
+		assert.isString(user);
+		assert.isString(pass);
+		assert.isString(scriptFilePath);
+		if (templateView) {
+			assert.isObject(templateView);
+		}
+
+		console.log('Running provisioning script ' + scriptFilePath + ' on VM ' + host);
+
+		var scriptTemplate = fs.readFileSync(scriptFilePath).toString();
+		return azure.runSshScript(host, user, pass, scriptTemplate, templateView);
+	},
+
+	//
+	// Run a single or set of provisioning scripts on the VM.
+	//
+	runProvisioningScripts: function (host, user, pass, provisionScript, templateView) {
+
+		assert.isString(host);
+		assert.isString(user);
+		assert.isString(pass);
+		if (templateView) {
+			assert.isObject(templateView);
+		}
+
+		if (util.isArray(provisionScript)) {
+			return Q.all(E.from(provisionScript)
+				.select(function (script) {
+					return azure.runSshScriptFile(host, user, pass, script, templateView)
+				})
+				.toArray()
+			);
+		}
+		else {
+			assert.isString(provisionScript);
+
+			return azure.runSshScriptFile(host, user, pass, provisionScript, templateView);
+		}
 	},
 
 };
