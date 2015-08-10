@@ -103,8 +103,8 @@ var azure = {
 	createEndPoint: function (vmName, externalPort, internalPort, endpointName) {
 
 		assert.isString(vmName);
-		assert.isString(externalPort);
-		assert.isString(internalPort);
+		assert.isNumber(externalPort);
+		assert.isNumber(internalPort);
 		assert.isString(endpointName);
 
 		console.log('Creating endpoint ' + endpointName + ' for ' + vmName);
@@ -256,6 +256,33 @@ var azure = {
 
 			return azure.runSshScriptFile(host, user, pass, provisionScript, templateView);
 		}
+	},
+
+	//
+	// Create a VM, wait until it is ready to go, then run 1 or more provisioning scripts via ssh.
+	//
+	provisionVM: function (vmName, networkName, imageName, user, pass, staticIP, endpoints, provisionScript, templateView) {
+
+		assert.isString(vmName);
+		assert.isString(networkName);
+		assert.isString(imageName);
+		assert.isString(user);
+		assert.isString(pass);
+		if (staticIP) {
+			assert.isString(staticIP);	
+		}
+		if (endpoints) {
+			assert.isArray(endpoints);
+		}	
+
+		return azure.createVM(vmName, networkName, imageName, user, pass, staticIP, endpoints)
+			.then(function () {
+				return azure.waitVmRunning(vmName);
+			})
+			.then(function () {
+				var hostName = vmName + '.cloudapp.net';
+				return azure.runProvisioningScripts(hostName, user, pass, provisionScript, templateView);
+			});
 	},
 
 };
