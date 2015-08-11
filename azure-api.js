@@ -47,13 +47,17 @@ var Azure = function (config) {
 
 		return spawn(azureCmd, args, spawnOptions) 
 			.then(function (output) {
-				console.log(output.stdout);
-				console.log(output.stderr);
+				if (verbose) {
+					console.log(output.stdout);
+					console.log(output.stderr);
+				}
 				return output;
 			})
 			.catch(function (err) {
-				console.log(err.stdout);
-				console.log(err.stderr);
+				if (verbose) {
+					console.log(err.stdout);
+					console.log(err.stderr);
+				}
 				throw err;
 			});
 	};

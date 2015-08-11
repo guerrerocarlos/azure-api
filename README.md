@@ -17,7 +17,10 @@ To install:
 
 Then in your NodeJS script:
 
-	var azure = require('azure-api');
+	var config = {
+		verbose: true
+	};
+	var azure = require('azure-api')(config);
 
 To create a network:
 
