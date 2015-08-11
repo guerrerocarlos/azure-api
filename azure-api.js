@@ -106,6 +106,10 @@ var Azure = function (config) {
 			assert.isArray(vmOptions.endpoints);
 		}
 
+		if (vmOptions.sshCertFile) {
+			assert.isString(vmOptions.sshCertFile);
+		}
+
 		if (verbose) {
 			console.log('Creating vm ' + vmOptions.name + ' on network ' + vmOptions.networkName);
 		}
@@ -125,6 +129,11 @@ var Azure = function (config) {
 		if (vmOptions.staticIP) {
 			args.push('--static-ip');
 			args.push(vmOptions.staticIP);
+		}
+
+		if (vmOptions.sshCertFile) {
+			args.push('--ssh-cert');
+			args.push(vmOptions.sshCertFile);
 		}
 
 		return self.runAzureCmd(args)
