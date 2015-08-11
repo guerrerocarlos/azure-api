@@ -37,14 +37,16 @@ To create a network:
 
 To create a VM:
 
-	var vmName = "somevm";
-	var networkName = "somenetwork";
-	var imageName ="b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu_DAILY_BUILD-trusty-14_04_2-LTS-amd64-server-20150708-en-us-30GB"; 
-	var user = "username"; // User name for the VM.
-	var pass = "password"; // Password for the VM.
-	var endpoints = ... list of end points ...
-	
-	azure.createVM(vmName, networkName, imageName, user, pass, endpoints)
+	var vm = {
+		name: "somevm",
+		networkName: "somenetwork",
+		imageName: "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu_DAILY_BUILD-trusty-14_04_2-LTS-amd64-server-20150708-en-us-30GB",
+		user: "username", // User name for the VM.
+		pass: "password", // Password for the VM.
+		endpoints: ... list of end points ...
+	};
+
+	azure.createVM(vm)
 		.then(function () {
 			// VM was created sucessfully.
 		})
@@ -94,23 +96,28 @@ The end result is you can wire all these functions together to provision your cl
 
 	var networkName = "somenetwork";
 	var location = "Australia East";
-	var vmName = "somevm";
 	var host = vmName + ".cloudapp.net";
-	var imageName ="b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu_DAILY_BUILD-trusty-14_04_2-LTS-amd64-server-20150708-en-us-30GB"; 
-	var user = "username";
-	var pass = "password";
-	var endpoints = ... list of end points ...
-	var scriptFile = "provision.sh";
+
+	var vm = {
+		name: "somevm",
+		networkName: networkName,
+		imageName: "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu_DAILY_BUILD-trusty-14_04_2-LTS-amd64-server-20150708-en-us-30GB",
+		user: "username", // User name for the VM.
+		pass: "password", // Password for the VM.
+		endpoints: ... list of end points ...
+	};
+
+	var provisionScriptFile = "provision.sh";
 	
 	azure.createNetwork(networkName, location)
 		.then(function () {
-			return azure.createVM(vmName, networkName, imageName, user, pass, endpoints);
+			return azure.createVM(vm);
 		})
 		.then(function () {
-			return azure.waitVmRunning(vmName);
+			return azure.waitVmRunning(vm.name);
 		})
 		.then(function () {
-			return azure.runSshScript(host, user, pass, scriptFile)
+			return azure.runSshScript(host, vm.user, vm.pass, provisionScriptFile)
 		})
 		.then(function () {
 			// provisioning completed successfully.
@@ -119,5 +126,32 @@ The end result is you can wire all these functions together to provision your cl
 			// some error occurred.
 		}); 
 
+Or you could just call *provisionVM*:
+
+	var networkName = "somenetwork";
+	var location = "Australia East";
+
+	var vm = {
+		name: "somevm",
+		networkName: networkName,
+		imageName: "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu_DAILY_BUILD-trusty-14_04_2-LTS-amd64-server-20150708-en-us-30GB",
+		user: "username", // User name for the VM.
+		pass: "password", // Password for the VM.
+		endpoints: ... list of end points ...
+		provisionScript: "provision.sh",
+	};
+
+	var provisionScriptFile = "provision.sh";
+	
+	azure.createNetwork(networkName, location)
+		.then(function () {
+			return azure.provisionVM(vm);
+		})
+		.then(function () {
+			// provisioning completed successfully.
+		})
+		.catch(function (err) {
+			// some error occurred.
+		}); 
 
 Have fun! Thanks for coming to the party.
