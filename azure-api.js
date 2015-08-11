@@ -93,11 +93,19 @@ var Azure = function (config) {
 
 		assert.isObject(vmOptions);		
 		assert.isString(vmOptions.name);
-		assert.isString(vmOptions.networkName);
+		if (vmOptions.dnsName) {
+			assert.isString(vmOptions.dnsName);
+		}
+		if (vmOptions.networkName) {
+			assert.isString(vmOptions.networkName);
+		}
+		if (vmOptions.location) {
+			assert.isString(vmOptions.location);
+		}
 		assert.isString(vmOptions.imageName);
 		assert.isString(vmOptions.user);
 		assert.isString(vmOptions.pass);
-		
+
 		if (vmOptions.staticIP) {
 			assert.isString(vmOptions.staticIP);
 		}
@@ -110,21 +118,46 @@ var Azure = function (config) {
 			assert.isString(vmOptions.sshCertFile);
 		}
 
+		if (vmOptions.networkName && vmOptions.location) {
+			throw new Error("Can't specify both 'networkName' and 'location'.");
+		}
+
+		if (!vmOptions.networkName && !vmOptions.location) {
+			throw new Error("Must specify one of 'networkName' or 'location'.");
+		}
+
 		if (verbose) {
 			console.log('Creating vm ' + vmOptions.name + ' on network ' + vmOptions.networkName);
+		}
+
+		var dnsName = vmOptions.name;
+		var vmName = vmOptions.name;
+
+		if (vmOptions.dnsName) {
+			dnsName = vmOptions.dnsName;
 		}
 
 		var args = [
 			'vm',
 			'create',
-			vmOptions.name,
+			dnsName,
 			vmOptions.imageName,
 			vmOptions.user,
 			vmOptions.pass,
-			'--virtual-network-name',
-			vmOptions.networkName,
 			'--ssh',
+			'--vm-name',
+			vmName,
 		];
+
+		if (vmOptions.networkName) {
+			args.push('--virtual-network-name');
+			args.push(vmOptions.networkName);
+		}
+
+		if (vmOptions.location) {
+			args.push('--location');
+			args.push(vmOptions.location);
+		}
 
 		if (vmOptions.staticIP) {
 			args.push('--static-ip');
@@ -337,7 +370,7 @@ var Azure = function (config) {
 			})
 			.then(function () {
 				if (vm.provisionScript) {
-					var hostName = vm.name + '.cloudapp.net';
+					var hostName = (vm.dnsName || vm.name) + '.cloudapp.net';
 					return self.runProvisioningScripts(hostName, vm.user, vm.pass, vm.provisionScript, vm.provisioningTemplateView);
 				}
 			});
