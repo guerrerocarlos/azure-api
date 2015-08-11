@@ -1,6 +1,6 @@
 'use strict';
 
-var exec = require('child-process-promise').exec;
+var spawn = require('child-process-promise').spawn;
 var quote = require('quote');
 var Q = require('q');
 var E = require('linq');
@@ -11,6 +11,39 @@ var Mustache = require('Mustache');
 var util = require('util');
 
 var azure = {
+
+	//
+	// Run an Azure command, return a promise.
+	//
+	runAzureCmd: function (args) {
+
+		assert.isArray(args);
+		assert(args.length > 0);
+
+		var azureCmd = 'azure.cmd';
+
+		var spawnOptions = {
+			capture: [ 
+				'stdout', 
+				'stderr', 
+			],
+		};
+
+		console.log('Invoking command: "' + azureCmd + ' ' + args.map(function (arg) { return quote(arg); }).join(' ') + '"');
+
+		return spawn(azureCmd, args, spawnOptions) 
+			.then(function (output) {
+				console.log(output.stdout);
+				console.log(output.stderr);
+				return output;
+			})
+			.catch(function (err) {
+				console.log(err.stdout);
+				console.log(err.stderr);
+				throw err;
+			});
+	},
+
 	//
 	// Create an Azure network.
 	//
@@ -22,21 +55,15 @@ var azure = {
 		console.log('Creating network: ' + networkName);
 
 		var args = [
-			'azure',
 			'network',
 			'vnet',
 			'create',
-			quote(networkName),
+			networkName,
 			'-l',
-			quote(location),
+			location,
 		];
 
-		return exec(args.join(' '))
-			.then(function (output) {
-				console.log(output.stdout);
-				console.log(output.stderr);
-				return output;
-			});
+		return azure.runAzureCmd(args);
 	},
 
 	//
@@ -59,15 +86,14 @@ var azure = {
 		console.log('Creating vm ' + vmName + ' on network ' + networkName);
 
 		var args = [
-			'azure',
 			'vm',
 			'create',
-			quote(vmName),
-			quote(imageName),
-			quote(user),
-			quote(pass),
+			vmName,
+			imageName,
+			user,
+			pass,
 			'--virtual-network-name',
-			quote(networkName),
+			networkName,
 			'--ssh',
 		];
 
@@ -76,12 +102,7 @@ var azure = {
 			args.push(staticIP);
 		}
 
-		return exec(args.join(' '))
-			.then(function (output) {
-				console.log(output.stdout);
-				console.log(output.stderr);
-				return output;
-			})
+		return azure.runAzureCmd(args)
 			.then(function () {
 				if (!endpoints) {
 					return;
@@ -110,22 +131,16 @@ var azure = {
 		console.log('Creating endpoint ' + endpointName + ' for ' + vmName);
 
 		var args = [
-			'azure',
 			'vm',
 			'endpoint',
 			'create',
-			quote(vmName),
+			vmName,
 			externalPort,
 			internalPort,
 			'--name="' + endpointName + '"',
 		];
 
-		return exec(args.join(' '))
-			.then(function (output) {
-				console.log(output.stdout);
-				console.log(output.stderr);
-				return output;
-			});
+		return azure.runAzureCmd(args);
 	},
 
 	//
@@ -136,14 +151,13 @@ var azure = {
 		assert.isString(vmName);
 
 		var args = [
-			'azure',
 			'vm',
 			'show',
-			quote(vmName),
+			vmName,
 			'--json',
 		];
 
-		return exec(args.join(' '))
+		return azure.runAzureCmd(args)
 			.then(function (output) {
 				return JSON.parse(output.stdout);
 			});
@@ -209,7 +223,7 @@ var azure = {
 		var scriptInstance = Mustache.render(scriptTemplate, templateView);
 
 		var ssh = new SshClient(sshConfig);
-		return ssh.exec(scriptInstance);
+		return ssh.spawn(azureCmd, scriptInstance);
 	},
 
 	//
