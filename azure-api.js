@@ -89,50 +89,53 @@ var Azure = function (config) {
 	//
 	// Create an Azure VM in an existing network.
 	//
-	self.createVM  = function (vmName, networkName, imageName, user, pass, staticIP, endpoints) {
+	self.createVM  = function (vmOptions) {
+
+		assert.isObject(vmOptions);		
+		assert.isString(vmOptions.name);
+		assert.isString(vmOptions.networkName);
+		assert.isString(vmOptions.imageName);
+		assert.isString(vmOptions.user);
+		assert.isString(vmOptions.pass);
 		
-		assert.isString(vmName);
-		assert.isString(networkName);
-		assert.isString(imageName);
-		assert.isString(user);
-		assert.isString(pass);
-		if (staticIP) {
-			assert.isString(staticIP);
+		if (vmOptions.staticIP) {
+			assert.isString(vmOptions.staticIP);
 		}
-		if (endpoints) {
-			assert.isArray(endpoints);
+		
+		if (vmOptions.endpoints) {
+			assert.isArray(vmOptions.endpoints);
 		}
 
 		if (verbose) {
-			console.log('Creating vm ' + vmName + ' on network ' + networkName);
+			console.log('Creating vm ' + vmOptions.name + ' on network ' + vmOptions.networkName);
 		}
 
 		var args = [
 			'vm',
 			'create',
-			vmName,
-			imageName,
-			user,
-			pass,
+			vmOptions.name,
+			vmOptions.imageName,
+			vmOptions.user,
+			vmOptions.pass,
 			'--virtual-network-name',
-			networkName,
+			vmOptions.networkName,
 			'--ssh',
 		];
 
-		if (staticIP) {
+		if (vmOptions.staticIP) {
 			args.push('--static-ip');
-			args.push(staticIP);
+			args.push(vmOptions.staticIP);
 		}
 
 		return self.runAzureCmd(args)
 			.then(function () {
-				if (!endpoints) {
+				if (!vmOptions.endpoints) {
 					return;
 				}
 
-				var endPointPromises = E.from(endpoints)
+				var endPointPromises = E.from(vmOptions.endpoints)
 					.select(function (endpoint) {
-						return self.createEndPoint(vmName, endpoint.externalPort, endpoint.internalPort, endpoint.name);
+						return self.createEndPoint(vmOptions.name, endpoint);
 					})
 					.toArray();
 
@@ -143,15 +146,16 @@ var Azure = function (config) {
 	//
 	// Create an endpoint on an existing Azure VM.
 	//
-	self.createEndPoint = function (vmName, externalPort, internalPort, endpointName) {
+	self.createEndPoint = function (vmName, endpoint) {
 
 		assert.isString(vmName);
-		assert.isNumber(externalPort);
-		assert.isNumber(internalPort);
-		assert.isString(endpointName);
+		assert.isObject(endpoint);
+		assert.isNumber(endpoint.externalPort);
+		assert.isNumber(endpoint.internalPort);
+		assert.isString(endpoint.name);
 
 		if (verbose) {
-			console.log('Creating endpoint ' + endpointName + ' for ' + vmName);
+			console.log('Creating endpoint ' + endpoint.name + ' for ' + vmName);
 		}
 
 		var args = [
@@ -159,9 +163,9 @@ var Azure = function (config) {
 			'endpoint',
 			'create',
 			vmName,
-			externalPort,
-			internalPort,
-			'--name="' + endpointName + '"',
+			endpoint.externalPort,
+			endpoint.internalPort,
+			'--name="' + endpoint.name + '"',
 		];
 
 		return self.runAzureCmd(args);
@@ -309,27 +313,24 @@ var Azure = function (config) {
 	//
 	// Create a VM, wait until it is ready to go, then run 1 or more provisioning scripts via ssh.
 	//
-	self.provisionVM = function (vmName, networkName, imageName, user, pass, staticIP, endpoints, provisionScript, templateView) {
+	self.provisionVM = function (vm) {
 
-		assert.isString(vmName);
-		assert.isString(networkName);
-		assert.isString(imageName);
-		assert.isString(user);
-		assert.isString(pass);
-		if (staticIP) {
-			assert.isString(staticIP);	
+		assert.isObject(vm);
+		assert.isString(vm.name);
+		assert.isString(vm.provisionScript);
+		if (vm.provisioningTemplateView) {
+			assert.isObject(vm.provisioningTemplateView);
 		}
-		if (endpoints) {
-			assert.isArray(endpoints);
-		}	
 
-		return self.createVM(vmName, networkName, imageName, user, pass, staticIP, endpoints)
+		return self.createVM(vm)
 			.then(function () {
-				return self.waitVmRunning(vmName);
+				return self.waitVmRunning(vm.name);
 			})
 			.then(function () {
-				var hostName = vmName + '.cloudapp.net';
-				return self.runProvisioningScripts(hostName, user, pass, provisionScript, templateView);
+				if (vm.provisionScript) {
+					var hostName = vm.name + '.cloudapp.net';
+					return self.runProvisioningScripts(hostName, vm.user, vm.pass, vm.provisionScript, vm.provisioningTemplateView);
+				}
 			});
 	};
 
