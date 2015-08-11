@@ -207,7 +207,8 @@ var Azure = function (config) {
 			vmName,
 			endpoint.externalPort,
 			endpoint.internalPort,
-			'--name="' + endpoint.name + '"',
+			'--name',
+			endpoint.name,
 		];
 
 		return self.runAzureCmd(args);
