@@ -255,7 +255,7 @@ var Azure = function (config) {
 		var scriptInstance = Mustache.render(scriptTemplate, templateView);
 
 		var ssh = new SshClient(sshConfig);
-		return ssh.spawn(azureCmd, scriptInstance);
+		return ssh.exec(scriptInstance);
 	},
 
 	//
