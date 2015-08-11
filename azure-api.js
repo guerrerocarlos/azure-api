@@ -10,12 +10,24 @@ var assert = require('chai').assert;
 var Mustache = require('Mustache');
 var util = require('util');
 
-var azure = {
+var Azure = function (config) {
+
+	assert.isObject(this);
+
+	if (!config) {
+		config = {};
+	}
+	else {
+		assert.isObject(config);
+	}
+
+	var self = this;
+	var verbose = config.verbose;
 
 	//
 	// Run an Azure command, return a promise.
 	//
-	runAzureCmd: function (args) {
+	self.runAzureCmd = function (args) {
 
 		assert.isArray(args);
 		assert(args.length > 0);
@@ -29,7 +41,9 @@ var azure = {
 			],
 		};
 
-		console.log('Invoking command: "' + azureCmd + ' ' + args.map(function (arg) { return quote(arg); }).join(' ') + '"');
+		if (verbose) {
+			console.log('Invoking command: "' + azureCmd + ' ' + args.map(function (arg) { return quote(arg); }).join(' ') + '"');
+		}
 
 		return spawn(azureCmd, args, spawnOptions) 
 			.then(function (output) {
@@ -42,17 +56,19 @@ var azure = {
 				console.log(err.stderr);
 				throw err;
 			});
-	},
+	};
 
 	//
 	// Create an Azure network.
 	//
-	createNetwork: function (networkName, location) {
+	self.createNetwork  = function (networkName, location) {
 
 		assert.isString(networkName);
 		assert.isString(location);
 
-		console.log('Creating network: ' + networkName);
+		if (verbose) {
+			console.log('Creating network: ' + networkName);
+		}
 
 		var args = [
 			'network',
@@ -63,13 +79,13 @@ var azure = {
 			location,
 		];
 
-		return azure.runAzureCmd(args);
-	},
+		return self.runAzureCmd(args);
+	};
 
 	//
 	// Create an Azure VM in an existing network.
 	//
-	createVM: function (vmName, networkName, imageName, user, pass, staticIP, endpoints) {
+	self.createVM  = function (vmName, networkName, imageName, user, pass, staticIP, endpoints) {
 		
 		assert.isString(vmName);
 		assert.isString(networkName);
@@ -83,7 +99,9 @@ var azure = {
 			assert.isArray(endpoints);
 		}
 
-		console.log('Creating vm ' + vmName + ' on network ' + networkName);
+		if (verbose) {
+			console.log('Creating vm ' + vmName + ' on network ' + networkName);
+		}
 
 		var args = [
 			'vm',
@@ -102,7 +120,7 @@ var azure = {
 			args.push(staticIP);
 		}
 
-		return azure.runAzureCmd(args)
+		return self.runAzureCmd(args)
 			.then(function () {
 				if (!endpoints) {
 					return;
@@ -110,25 +128,27 @@ var azure = {
 
 				var endPointPromises = E.from(endpoints)
 					.select(function (endpoint) {
-						return azure.createEndPoint(vmName, endpoint.externalPort, endpoint.internalPort, endpoint.name);
+						return self.createEndPoint(vmName, endpoint.externalPort, endpoint.internalPort, endpoint.name);
 					})
 					.toArray();
 
 				return Q.all(endPointPromises);
 			});
-	},
+	};
 
 	//
 	// Create an endpoint on an existing Azure VM.
 	//
-	createEndPoint: function (vmName, externalPort, internalPort, endpointName) {
+	self.createEndPoint = function (vmName, externalPort, internalPort, endpointName) {
 
 		assert.isString(vmName);
 		assert.isNumber(externalPort);
 		assert.isNumber(internalPort);
 		assert.isString(endpointName);
 
-		console.log('Creating endpoint ' + endpointName + ' for ' + vmName);
+		if (verbose) {
+			console.log('Creating endpoint ' + endpointName + ' for ' + vmName);
+		}
 
 		var args = [
 			'vm',
@@ -140,13 +160,13 @@ var azure = {
 			'--name="' + endpointName + '"',
 		];
 
-		return azure.runAzureCmd(args);
+		return self.runAzureCmd(args);
 	},
 
 	//
 	// Get the status of a particular Azure VM.
 	//
-	getVmStatus: function (vmName) {
+	self.getVmStatus = function (vmName) {
 
 		assert.isString(vmName);
 
@@ -157,41 +177,49 @@ var azure = {
 			'--json',
 		];
 
-		return azure.runAzureCmd(args)
+		return self.runAzureCmd(args)
 			.then(function (output) {
 				return JSON.parse(output.stdout);
 			});
-	},
+	};
 
 	//
 	// Wait until a particular Azure VM is running.
 	// Returns a promise that is resolved when the VM is running.
 	//
-	waitVmRunning: function (vmName) {
+	self.waitVmRunning = function (vmName) {
 
 		assert.isString(vmName);
 
-		console.log(vmName + ': Waiting for VM to be running');
+		if (verbose) {
+			console.log(vmName + ': Waiting for VM to be running');
+		}
 
 		return Q.Promise(function (resolve, reject) {
-			var checkVmRunning = function () {
-				azure.getVmStatus(vmName)
+			var checkVmRunning  = function () {
+				self.getVmStatus(vmName)
 					.then(function (status) {
 						var isRunning = status.InstanceStatus === 'ReadyRole';
 						if (isRunning) {
-							console.log(vmName + ': VM is running');
+							if (verbose) {
+								console.log(vmName + ': VM is running');
+							}
 
 							resolve();
 						}
 						else {
-							console.log(vmName + ': VM not yet running, current status: ' + status.InstanceStatus);
+							if (verbose) {
+								console.log(vmName + ': VM not yet running, current status: ' + status.InstanceStatus);
+							}
 
 							checkVmRunning();
 						}
 					})
 					.catch(function (err) {
-						console.error(vmName + ': Error checking VM status.');
-						console.error(err.stack);
+						if (verbose) {
+							console.error(vmName + ': Error checking VM status.');
+							console.error(err.stack);
+						}
 
 						checkVmRunning();
 					});
@@ -199,12 +227,12 @@ var azure = {
 
 			checkVmRunning();
 		});
-	},
+	};
 
 	//
 	// Run a templated shell script on a particular Azure VM via ssh.
 	//
-	runSshScript: function (host, user, pass, scriptTemplate, templateView) {
+	self.runSshScript = function (host, user, pass, scriptTemplate, templateView) {
 
 		assert.isString(host);
 		assert.isString(user);
@@ -229,7 +257,7 @@ var azure = {
 	//
 	// Run a templated shell script on a particular Azure VM via ssh.
 	//
-	runSshScriptFile: function (host, user, pass, scriptFilePath, templateView) {
+	self.runSshScriptFile = function (host, user, pass, scriptFilePath, templateView) {
 
 		assert.isString(host);
 		assert.isString(user);
@@ -239,16 +267,18 @@ var azure = {
 			assert.isObject(templateView);
 		}
 
-		console.log('Running provisioning script ' + scriptFilePath + ' on VM ' + host);
+		if (verbose) {
+			console.log('Running provisioning script ' + scriptFilePath + ' on VM ' + host);
+		}
 
 		var scriptTemplate = fs.readFileSync(scriptFilePath).toString();
-		return azure.runSshScript(host, user, pass, scriptTemplate, templateView);
-	},
+		return self.runSshScript(host, user, pass, scriptTemplate, templateView);
+	};
 
 	//
 	// Run a single or set of provisioning scripts on the VM.
 	//
-	runProvisioningScripts: function (host, user, pass, provisionScript, templateView) {
+	self.runProvisioningScripts = function (host, user, pass, provisionScript, templateView) {
 
 		assert.isString(host);
 		assert.isString(user);
@@ -260,7 +290,7 @@ var azure = {
 		if (util.isArray(provisionScript)) {
 			return Q.all(E.from(provisionScript)
 				.select(function (script) {
-					return azure.runSshScriptFile(host, user, pass, script, templateView)
+					return self.runSshScriptFile(host, user, pass, script, templateView)
 				})
 				.toArray()
 			);
@@ -268,14 +298,14 @@ var azure = {
 		else {
 			assert.isString(provisionScript);
 
-			return azure.runSshScriptFile(host, user, pass, provisionScript, templateView);
+			return self.runSshScriptFile(host, user, pass, provisionScript, templateView);
 		}
-	},
+	};
 
 	//
 	// Create a VM, wait until it is ready to go, then run 1 or more provisioning scripts via ssh.
 	//
-	provisionVM: function (vmName, networkName, imageName, user, pass, staticIP, endpoints, provisionScript, templateView) {
+	self.provisionVM = function (vmName, networkName, imageName, user, pass, staticIP, endpoints, provisionScript, templateView) {
 
 		assert.isString(vmName);
 		assert.isString(networkName);
@@ -289,16 +319,18 @@ var azure = {
 			assert.isArray(endpoints);
 		}	
 
-		return azure.createVM(vmName, networkName, imageName, user, pass, staticIP, endpoints)
+		return self.createVM(vmName, networkName, imageName, user, pass, staticIP, endpoints)
 			.then(function () {
-				return azure.waitVmRunning(vmName);
+				return self.waitVmRunning(vmName);
 			})
 			.then(function () {
 				var hostName = vmName + '.cloudapp.net';
-				return azure.runProvisioningScripts(hostName, user, pass, provisionScript, templateView);
+				return self.runProvisioningScripts(hostName, user, pass, provisionScript, templateView);
 			});
-	},
+	};
 
 };
 
-module.exports = azure;
+module.exports = function (config) {
+	return new Azure(config);
+};
