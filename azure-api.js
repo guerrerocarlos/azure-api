@@ -360,7 +360,6 @@ var Azure = function (config) {
 
 		assert.isObject(vm);
 		assert.isString(vm.name);
-		assert.isString(vm.provisionScript);
 		if (vm.provisioningTemplateView) {
 			assert.isObject(vm.provisioningTemplateView);
 		}
