@@ -175,13 +175,15 @@ var Azure = function (config) {
 					return;
 				}
 
-				var endPointPromises = E.from(vmOptions.endpoints)
-					.select(function (endpoint) {
-						return self.createEndPoint(vmOptions.name, endpoint);
-					})
-					.toArray();
-
-				return Q.all(endPointPromises);
+				return E.from(vmOptions.endpoints)
+					.aggregate(
+						Q(),
+						function (prevPromise, endpoint) {
+							return prevPromise.then(function () {
+									return self.createEndPoint(vmOptions.name, endpoint);
+								});
+						}
+					);
 			});
 	};
 
