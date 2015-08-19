@@ -341,12 +341,15 @@ var Azure = function (config) {
 		}
 
 		if (util.isArray(provisionScript)) {
-			return Q.all(E.from(provisionScript)
-				.select(function (script) {
-					return self.runSshScriptFile(host, user, pass, script, templateView)
-				})
-				.toArray()
-			);
+			return E.from(provisionScript)
+				.aggregate(
+					Q(),
+					function (previousPromise, script) {
+						return previousPromise.then(function () {
+							return self.runSshScriptFile(host, user, pass, script, templateView);
+						});						
+					}
+				);
 		}
 		else {
 			assert.isString(provisionScript);
