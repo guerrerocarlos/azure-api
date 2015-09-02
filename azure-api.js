@@ -73,6 +73,7 @@ var Azure = function (config) {
 
 		var args = [
 			'storage',
+			'container',
 			'create',
 			containerName
 		];
