@@ -302,7 +302,7 @@ var Azure = function (config) {
 			'hdinsight',
 			'cluster',
 			'show',
-			clName
+			clName,
 			'--json',
 		];
 
