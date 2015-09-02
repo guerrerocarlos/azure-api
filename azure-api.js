@@ -68,7 +68,7 @@ var Azure = function (config) {
 	self.createClusterStorage  = function (containerName) {
 
 		if (verbose) {
-			console.log('Creating network: ' + networkName);
+			console.log('Creating network: ' + containerName);
 		}
 
 		var args = [
