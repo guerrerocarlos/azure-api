@@ -95,7 +95,7 @@ var Azure = function (config) {
 		assert.isString(clOptions.sshUserName);
 		assert.isString(clOptions.clusterName);
 		assert.isString(clOptions.storageAccountName);
-		assert.isString(clOptions.torageAccountKey;
+		assert.isString(clOptions.storageAccountKey;
 		assert.isString(clOptions.userName);
 		assert.isString(clOptions.location);
 
