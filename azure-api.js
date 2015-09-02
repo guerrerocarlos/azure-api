@@ -339,7 +339,7 @@ var Azure = function (config) {
 	// Wait until a particular Azure Cluster is running.
 	// Returns a promise that is resolved when the Cluster is running.
 	//
-	self.waitClusterRunning = function (clName) {
+	self.waitClusterState = function (clName, state) {
 
 		assert.isString(clName);
 
@@ -348,23 +348,23 @@ var Azure = function (config) {
 		}
 
 		return Q.Promise(function (resolve, reject) {
-			var checkClRunning  = function () {
+			var checkClState  = function () {
 				self.getCluster(clName)
 					.then(function (status) {
-						var isRunning = status.status === 'Running';
+						var isRunning = status.status === state;
 						if (isRunning) {
 							if (verbose) {
-								console.log(clName + ': Cluster is running');
+								console.log(clName + ': Cluster is '+state);
 							}
 
 							resolve();
 						}
 						else {
 							if (verbose) {
-								console.log(clName + ': Cluster not yet running, current status: ' + status.status);
+								console.log(clName + ': Cluster not yet '+state+', current status: ' + status.status);
 							}
 
-							checkClRunning();
+							checkClState();
 						}
 					})
 					.catch(function (err) {
@@ -373,11 +373,11 @@ var Azure = function (config) {
 							console.error(err.stack);
 						}
 
-						checkClRunning();
+						checkClState();
 					});
 			};
 
-			checkClRunning();
+			checkClState();
 		});
 	};
 
