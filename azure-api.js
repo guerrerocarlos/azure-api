@@ -124,7 +124,7 @@ var Azure = function (config) {
 			clOptions.storageAccountName,
             '--storageAccountKey',
 			clOptions.storageAccountKey,
-            '--dataNodecount',
+            '--dataNodeCount',
             '4',
             '--userName',
             clOptions.userName,
