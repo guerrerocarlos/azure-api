@@ -32,12 +32,12 @@ var Azure = function (config) {
 		assert.isArray(args);
 		assert(args.length > 0);
 
-		var azureCmd = 'azure.cmd';
+		var azureCmd = 'azure';
 
 		var spawnOptions = {
-			capture: [ 
-				'stdout', 
-				'stderr', 
+			capture: [
+				'stdout',
+				'stderr',
 			],
 		};
 
@@ -45,7 +45,7 @@ var Azure = function (config) {
 			console.log('Invoking command: "' + azureCmd + ' ' + args.map(function (arg) { return quote(arg); }).join(' ') + '"');
 		}
 
-		return spawn(azureCmd, args, spawnOptions) 
+		return spawn(azureCmd, args, spawnOptions)
 			.then(function (output) {
 				if (verbose) {
 					console.log(output.stdout);
@@ -61,6 +61,81 @@ var Azure = function (config) {
 				throw err;
 			});
 	};
+
+	//
+	// Create an Azure cluster storage
+	//
+	self.createClusterStorage  = function (containerName) {
+
+		if (verbose) {
+			console.log('Creating network: ' + networkName);
+		}
+
+		var args = [
+			'storage',
+			'create',
+			containerName
+		];
+
+		return self.runAzureCmd(args);
+	};
+
+
+
+	//
+	// Create an Azure Cluster with an existing storage.
+	//
+	self.createCluster = function (clOptions) {
+
+		assert.isObject(clOptions);
+
+		assert.isString(clOptions.storageContainer);
+		assert.isString(clOptions.password);
+		assert.isString(clOptions.sshPassword);
+		assert.isString(clOptions.sshUserName);
+		assert.isString(clOptions.clusterName);
+		assert.isString(clOptions.storageAccountName);
+		assert.isString(clOptions.torageAccountKey;
+		assert.isString(clOptions.userName);
+		assert.isString(clOptions.location);
+
+		if (verbose) {
+			console.log('Creating cluster ' + clOptions.clusterName+ ' on network ' + clOptions.networkName);
+		}
+
+		var args = [
+			'hdinsight',
+			'cluster',
+			'create',
+            '--osType',
+            'linux',
+            '--storageContainer',
+			clOptions.storageContainer,
+            '--password',
+			clOptions.password,
+            '--sshPassword',
+			clOptions.sshPassword,
+            '--sshUserName',
+			clOptions.sshUserName,
+            '--clusterName',
+			clOptions.clusterName,
+            '--storageAccountName',
+			clOptions.storageAccountName,
+            '--storageAccountKey'
+			clOptions.storageAccountKey,
+            '--dataNodecount',
+            '4',
+            '--userName',
+            clOptions.userName,
+            '--location',
+            clOptions.location
+		];
+
+		return self.runAzureCmd(args)
+
+    };
+
+
 
 	//
 	// Create an Azure network.
@@ -91,7 +166,7 @@ var Azure = function (config) {
 	//
 	self.createVM  = function (vmOptions) {
 
-		assert.isObject(vmOptions);		
+		assert.isObject(vmOptions);
 		assert.isString(vmOptions.name);
 		if (vmOptions.dnsName) {
 			assert.isString(vmOptions.dnsName);
@@ -109,7 +184,7 @@ var Azure = function (config) {
 		if (vmOptions.staticIP) {
 			assert.isString(vmOptions.staticIP);
 		}
-		
+
 		if (vmOptions.endpoints) {
 			assert.isArray(vmOptions.endpoints);
 		}
@@ -217,6 +292,29 @@ var Azure = function (config) {
 	},
 
 	//
+	// Get the status of a particular Azure Cluster.
+	//
+	self.getClusterStatus = function (clName) {
+
+		assert.isString(clName);
+
+		var args = [
+			'hdinsight',
+			'cluster',
+			'show',
+			clName
+			'--json',
+		];
+
+		return self.runAzureCmd(args)
+			.then(function (output) {
+				return JSON.parse(output.stdout);
+			});
+	};
+
+
+
+	//
 	// Get the status of a particular Azure VM.
 	//
 	self.getVmStatus = function (vmName) {
@@ -235,6 +333,54 @@ var Azure = function (config) {
 				return JSON.parse(output.stdout);
 			});
 	};
+
+
+	//
+	// Wait until a particular Azure Cluster is running.
+	// Returns a promise that is resolved when the Cluster is running.
+	//
+	self.waitClusterRunning = function (clName) {
+
+		assert.isString(clName);
+
+		if (verbose) {
+			console.log(clName + ': Waiting for Cluster to be running');
+		}
+
+		return Q.Promise(function (resolve, reject) {
+			var checkClRunning  = function () {
+				self.getCluster(clName)
+					.then(function (status) {
+						var isRunning = status.status === 'Running';
+						if (isRunning) {
+							if (verbose) {
+								console.log(clName + ': Cluster is running');
+							}
+
+							resolve();
+						}
+						else {
+							if (verbose) {
+								console.log(clName + ': Cluster not yet running, current status: ' + status.status);
+							}
+
+							checkClRunning();
+						}
+					})
+					.catch(function (err) {
+						if (verbose) {
+							console.error(clName + ': Error checking Cluster status.');
+							console.error(err.stack);
+						}
+
+						checkClRunning();
+					});
+			};
+
+			checkClRunning();
+		});
+	};
+
 
 	//
 	// Wait until a particular Azure VM is running.
@@ -347,7 +493,7 @@ var Azure = function (config) {
 					function (previousPromise, script) {
 						return previousPromise.then(function () {
 							return self.runSshScriptFile(host, user, pass, script, templateView);
-						});						
+						});
 					}
 				);
 		}
