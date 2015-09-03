@@ -137,6 +137,30 @@ var Azure = function (config) {
     };
 
 
+	//
+	// Delete Azure Cluster
+	//
+	self.deleteCluster = function (clusterName) {
+
+		assert.isString(clusterName);
+
+		if (verbose) {
+			console.log('Deleting cluster: ' + clusterName);
+		}
+
+        //hdinsight cluster delete
+		var args = [
+			'hdinsight',
+			'cluster',
+			'delete',
+			clusterName,
+			'--json'
+		];
+
+		return self.runAzureCmd(args);
+	};
+
+
 
 	//
 	// Create an Azure network.
@@ -338,7 +362,7 @@ var Azure = function (config) {
 
 	//
 	// Wait until a particular Azure Cluster is running.
-	// Returns a promise that is resolved when the Cluster is running.
+	// Returns a promise that is resolved when the Cluster is in <state>
 	//
 	self.waitClusterState = function (clName, state) {
 
