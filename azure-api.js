@@ -69,7 +69,6 @@ var Azure = function (config) {
 	//
 	self.deleteCluster = function (clOptions) {
 
-
 		assert.isObject(clOptions);
 
 		assert.isString(clOptions.storageContainer);
@@ -82,9 +81,8 @@ var Azure = function (config) {
 		assert.isString(clOptions.userName);
 		assert.isString(clOptions.location);
 
-
 		if (verbose) {
-			console.log('Deleting network: ' + containerName);
+			console.log('Deleting cluster: ' + clOptions.clusterName);
 		}
 
 		var args = [
@@ -95,7 +93,11 @@ var Azure = function (config) {
 			'--osType',
 			clOptions.osType,
             '--location',
-            clOptions.location
+            clOptions.location,
+            '--storageAccountName',
+			clOptions.storageAccountName,
+            '--storageAccountKey',
+			clOptions.storageAccountKey,
 		];
 
 		return self.runAzureCmd(args);
@@ -123,19 +125,18 @@ var Azure = function (config) {
 
 
 		if (verbose) {
-			console.log('Creatting network: ' + containerName);
+			console.log('Creatting network: ' + clOptions.containerName);
 		}
 
 		var args = [
 			'storage',
 			'container',
 			'create',
-			containerName,
+			clOptions.containerName,
             '--account-name',
             clOptions.storageAccountName,
             '--account-key',
             clOptions.storageAccountKey
-			containerName
 		];
 
 		return self.runAzureCmd(args);
@@ -148,14 +149,14 @@ var Azure = function (config) {
 	self.deleteClusterStorage  = function (clOptions) {
 
 		if (verbose) {
-			console.log('Deleting network: ' + containerName);
+			console.log('Deleting network: ' + clOptions.containerName);
 		}
 
 		var args = [
 			'storage',
 			'container',
 			'delete',
-			containerName
+			clOptions.containerName,
             '--account-name',
             clOptions.storageAccountName,
             '--account-key',
@@ -185,7 +186,7 @@ var Azure = function (config) {
 		assert.isString(clOptions.location);
 
 		if (verbose) {
-			console.log('Creating cluster ' + clOptions.clusterName+ ' on network ' + clOptions.networkName);
+			console.log('Creating cluster ' + clOptions.clusterName);
 		}
 
 		var args = [
@@ -221,48 +222,6 @@ var Azure = function (config) {
 		return self.runAzureCmd(args)
 
     };
-
-
-	//
-	// Delete Azure Cluster
-	//
-	self.deleteCluster = function (clOptions) {
-
-
-		assert.isObject(clOptions);
-
-		assert.isString(clOptions.storageContainer);
-		assert.isString(clOptions.password);
-		assert.isString(clOptions.sshPassword);
-		assert.isString(clOptions.sshUserName);
-		assert.isString(clOptions.clusterName);
-		assert.isString(clOptions.storageAccountName);
-		assert.isString(clOptions.storageAccountKey);
-		assert.isString(clOptions.userName);
-		assert.isString(clOptions.location);
-
-		assert.isString(clOptions);
-
-		if (verbose) {
-			console.log('Deleting cluster: ' + clusterName);
-		}
-
-        //hdinsight cluster delete
-		var args = [
-			'hdinsight',
-			'cluster',
-			'delete',
-			clusterName,
-            '--storageAccountName',
-			clOptions.storageAccountName,
-            '--storageAccountKey',
-			clOptions.storageAccountKey,
-		];
-
-		return self.runAzureCmd(args);
-	};
-
-
 
 	//
 	// Create an Azure network.
@@ -480,19 +439,22 @@ var Azure = function (config) {
 	self.waitClusterState = function (clOptions, state) {
         console.log("Inside waitClusterState")
 
-        clName = clOptions.clusterName
+        var clName = clOptions.clusterName
 		assert.isString(clName);
 
 		if (verbose) {
-			console.log(clName + ': Waiting for Cluster to be running');
+			console.log(clName + ': Waiting for Cluster to be '+state);
 		}
 
 		return Q.Promise(function (resolve, reject) {
 			var checkClState  = function () {
+                console.log("d")
 				self.getClusterStatus(clName)
 					.then(function (status) {
+                    console.log("f")
 						var isRunning = status.state === state;
 						var isError = status.state === 'Error';
+                        console.log("g")
 						if (isRunning) {
 							if (verbose) {
 								console.log(clName + ': Cluster is '+state);
