@@ -135,6 +135,7 @@ var Azure = function (config) {
             clOptions.storageAccountName,
             '--account-key',
             clOptions.storageAccountKey
+			containerName
 		];
 
 		return self.runAzureCmd(args);
@@ -178,8 +179,8 @@ var Azure = function (config) {
 		assert.isString(clOptions.sshPassword);
 		assert.isString(clOptions.sshUserName);
 		assert.isString(clOptions.clusterName);
-		assert.isString(clOptions.storageAccountName);
-		assert.isString(clOptions.storageAccountKey);
+		//assert.isString(clOptions.storageAccountName);
+		//assert.isString(clOptions.storageAccountKey);
 		assert.isString(clOptions.userName);
 		assert.isString(clOptions.location);
 
@@ -204,9 +205,11 @@ var Azure = function (config) {
             '--clusterName',
 			clOptions.clusterName,
             '--storageAccountName',
-			clOptions.storageAccountName,
+            config.account+'.blob.core.windows.net',
+			//clOptions.storageAccountName,
             '--storageAccountKey',
-			clOptions.storageAccountKey,
+            config.key,
+			//clOptions.storageAccountKey,
             '--dataNodeCount',
             '4',
             '--userName',
@@ -436,6 +439,8 @@ var Azure = function (config) {
 			'cluster',
 			'show',
 			clName,
+            '--osType',
+            'linux',
 			'--json',
 		];
 
@@ -473,6 +478,7 @@ var Azure = function (config) {
 	// Returns a promise that is resolved when the Cluster is in <state>
 	//
 	self.waitClusterState = function (clOptions, state) {
+        console.log("Inside waitClusterState")
 
         clName = clOptions.clusterName
 		assert.isString(clName);
@@ -483,9 +489,10 @@ var Azure = function (config) {
 
 		return Q.Promise(function (resolve, reject) {
 			var checkClState  = function () {
-				self.getCluster(clName)
+				self.getClusterStatus(clName)
 					.then(function (status) {
-						var isRunning = status.status === state;
+						var isRunning = status.state === state;
+						var isError = status.state === 'Error';
 						if (isRunning) {
 							if (verbose) {
 								console.log(clName + ': Cluster is '+state);
@@ -494,8 +501,11 @@ var Azure = function (config) {
 							resolve();
 						}
 						else {
+                            if(isError){
+                                reject();
+                            }
 							if (verbose) {
-								console.log(clName + ': Cluster not yet '+state+', current status: ' + status.status);
+								console.log(clName + ': Cluster not yet '+state+', current status: ' + status.state );
 							}
 
 							checkClState();
