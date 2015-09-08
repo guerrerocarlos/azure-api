@@ -62,25 +62,108 @@ var Azure = function (config) {
 			});
 	};
 
+//azure hdinsight cluster delete --osType linux on-demand-cluster10 --location "East US"
+
+	//
+	// Delete an Azure cluster
+	//
+	self.deleteCluster = function (clOptions) {
+
+
+		assert.isObject(clOptions);
+
+		assert.isString(clOptions.storageContainer);
+		assert.isString(clOptions.password);
+		assert.isString(clOptions.sshPassword);
+		assert.isString(clOptions.sshUserName);
+		assert.isString(clOptions.clusterName);
+		assert.isString(clOptions.storageAccountName);
+		assert.isString(clOptions.storageAccountKey);
+		assert.isString(clOptions.userName);
+		assert.isString(clOptions.location);
+
+
+		if (verbose) {
+			console.log('Deleting network: ' + containerName);
+		}
+
+		var args = [
+			'hdinsight',
+			'cluster',
+			'delete',
+			clOptions.clusterName,
+			'--osType',
+			clOptions.osType,
+            '--location',
+            clOptions.location
+		];
+
+		return self.runAzureCmd(args);
+	};
+
+
+
 	//
 	// Create an Azure cluster storage
 	//
-	self.createClusterStorage  = function (containerName) {
+	self.createClusterStorage  = function (clOptions) {
+
+
+		assert.isObject(clOptions);
+
+		assert.isString(clOptions.storageContainer);
+		assert.isString(clOptions.password);
+		assert.isString(clOptions.sshPassword);
+		assert.isString(clOptions.sshUserName);
+		assert.isString(clOptions.clusterName);
+		assert.isString(clOptions.storageAccountName);
+		assert.isString(clOptions.storageAccountKey);
+		assert.isString(clOptions.userName);
+		assert.isString(clOptions.location);
+
 
 		if (verbose) {
-			console.log('Creating network: ' + containerName);
+			console.log('Creatting network: ' + containerName);
 		}
 
 		var args = [
 			'storage',
 			'container',
 			'create',
-			containerName
+			containerName,
+            '--account-name',
+            clOptions.storageAccountName,
+            '--account-key',
+            clOptions.storageAccountKey
 		];
 
 		return self.runAzureCmd(args);
 	};
 
+
+	//
+	// Delete an Azure cluster storage
+	//
+	self.deleteClusterStorage  = function (clOptions) {
+
+		if (verbose) {
+			console.log('Deleting network: ' + containerName);
+		}
+
+		var args = [
+			'storage',
+			'container',
+			'delete',
+			containerName
+            '--account-name',
+            clOptions.storageAccountName,
+            '--account-key',
+            clOptions.storageAccountKey
+
+		];
+
+		return self.runAzureCmd(args);
+	};
 
 
 	//
@@ -140,9 +223,22 @@ var Azure = function (config) {
 	//
 	// Delete Azure Cluster
 	//
-	self.deleteCluster = function (clusterName) {
+	self.deleteCluster = function (clOptions) {
 
-		assert.isString(clusterName);
+
+		assert.isObject(clOptions);
+
+		assert.isString(clOptions.storageContainer);
+		assert.isString(clOptions.password);
+		assert.isString(clOptions.sshPassword);
+		assert.isString(clOptions.sshUserName);
+		assert.isString(clOptions.clusterName);
+		assert.isString(clOptions.storageAccountName);
+		assert.isString(clOptions.storageAccountKey);
+		assert.isString(clOptions.userName);
+		assert.isString(clOptions.location);
+
+		assert.isString(clOptions);
 
 		if (verbose) {
 			console.log('Deleting cluster: ' + clusterName);
@@ -154,7 +250,10 @@ var Azure = function (config) {
 			'cluster',
 			'delete',
 			clusterName,
-			'--json'
+            '--storageAccountName',
+			clOptions.storageAccountName,
+            '--storageAccountKey',
+			clOptions.storageAccountKey,
 		];
 
 		return self.runAzureCmd(args);
@@ -364,8 +463,9 @@ var Azure = function (config) {
 	// Wait until a particular Azure Cluster is running.
 	// Returns a promise that is resolved when the Cluster is in <state>
 	//
-	self.waitClusterState = function (clName, state) {
+	self.waitClusterState = function (clOptions, state) {
 
+        clName = clOptions.clusterName
 		assert.isString(clName);
 
 		if (verbose) {
