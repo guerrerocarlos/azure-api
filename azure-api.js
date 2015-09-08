@@ -317,6 +317,10 @@ var Azure = function (config) {
 			assert.isString(vmOptions.sshCertFile);
 		}
 
+		if (vmOptions.vmSize) {
+			assert.isString(vmOptions.vmSize);
+		}
+
 		if (vmOptions.networkName && vmOptions.location) {
 			throw new Error("Can't specify both 'networkName' and 'location'.");
 		}
@@ -366,6 +370,11 @@ var Azure = function (config) {
 		if (vmOptions.sshCertFile) {
 			args.push('--ssh-cert');
 			args.push(vmOptions.sshCertFile);
+		}
+
+		if (vmOptions.vmSize) {
+			args.push('--vm-size');
+			args.push(vmOptions.vmSize);
 		}
 
 		return self.runAzureCmd(args)
