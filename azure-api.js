@@ -63,6 +63,40 @@ var Azure = function (config) {
 	};
 
 //azure hdinsight cluster delete --osType linux on-demand-cluster10 --location "East US"
+    //
+    //
+
+	//
+	// Delete an Azure cluster
+	//
+	self.listStorageContainers = function (clOptions) {
+
+		assert.isObject(clOptions);
+
+		assert.isString(clOptions.storageAccountName);
+		assert.isString(clOptions.storageAccountKey);
+
+		if (verbose) {
+			console.log('Getting storage containers: ' + clOptions.storageAccountName);
+		}
+
+		var args = [
+			'storage',
+			'container',
+			'list',
+            '-a',
+			clOptions.storageAccountName,
+            '-k',
+			clOptions.storageAccountKey,
+            '--json',
+		];
+
+		return self.runAzureCmd(args)
+			.then(function (output) {
+				return JSON.parse(output.stdout);
+			});
+	};
+
 
 	//
 	// Delete an Azure cluster
