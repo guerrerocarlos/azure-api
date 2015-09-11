@@ -250,7 +250,8 @@ var Azure = function (config) {
             '--userName',
             clOptions.userName,
             '--location',
-            clOptions.location
+            clOptions.location,
+            '--json',
 		];
 
 		return self.runAzureCmd(args)
@@ -494,7 +495,7 @@ var Azure = function (config) {
 								console.log(clName + ': Cluster is '+state);
 							}
 
-							resolve();
+							resolve(status);
 						}
 						else {
                             if(isError){
