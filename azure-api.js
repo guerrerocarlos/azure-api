@@ -178,6 +178,32 @@ var Azure = function (config) {
 
 
 	//
+	// Get Jobs from Azure cluster
+	//
+	self.listJobs = function (clusterDnsName, userName, password) {
+
+		if (verbose) {
+			console.log('Deleting network: ' + clOptions.containerName);
+		}
+
+		var args = [
+            'azure job list'
+			'hdinsight',
+			'job',
+			'list',
+            '--clusterDnsName',
+            clusterDnsName,
+            '--userName',
+            userName,
+            '--password',
+            password
+		];
+
+		return self.runAzureCmd(args);
+	};
+
+
+	//
 	// Delete an Azure cluster storage
 	//
 	self.deleteClusterStorage  = function (clOptions) {
