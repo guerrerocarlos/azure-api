@@ -187,7 +187,6 @@ var Azure = function (config) {
 		}
 
 		var args = [
-            'azure job list'
 			'hdinsight',
 			'job',
 			'list',
