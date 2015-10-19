@@ -196,6 +196,35 @@ var Azure = function (config) {
             userName,
             '--password',
             password
+            '--json',
+		];
+
+		return self.runAzureCmd(args);
+	};
+
+
+	//
+	// Get status json for specific Job from specific Azure cluster
+	//
+	self.jobStatus = function (clusterDnsName, userName, password, jobId) {
+
+		if (verbose) {
+			console.log('Deleting network: ' + clOptions.containerName);
+		}
+
+		var args = [
+			'hdinsight',
+			'job',
+			'show',
+            '--clusterDnsName',
+            clusterDnsName,
+            '--userName',
+            userName,
+            '--password',
+            password,
+            '--jobId',
+            jobId,
+            '--json',
 		];
 
 		return self.runAzureCmd(args);
