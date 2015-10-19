@@ -195,7 +195,7 @@ var Azure = function (config) {
             '--userName',
             userName,
             '--password',
-            password
+            password,
             '--json',
 		];
 
