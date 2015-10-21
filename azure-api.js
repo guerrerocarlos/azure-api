@@ -304,9 +304,14 @@ var Azure = function (config) {
             '--userName',
             clOptions.userName,
             '--location',
-            clOptions.location,
-            '--json',
-		];
+            clOptions.location]
+        if(clOptions.subscription){
+            args.concat([
+             '--suscription',
+            clOptions.subscription,
+            ])
+        };
+        args.concat('--json')
 
 		return self.runAzureCmd(args)
 
