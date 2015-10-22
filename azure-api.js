@@ -208,11 +208,7 @@ var Azure = function (config) {
 	//
 	self.jobStatus = function (clusterDnsName, userName, password, jobId) {
 
-		if (verbose) {
-			console.log('Deleting network: ' + clOptions.containerName);
-		}
-
-		var args = [
+			var args = [
 			'hdinsight',
 			'job',
 			'show',
@@ -227,7 +223,11 @@ var Azure = function (config) {
             '--json',
 		];
 
-		return self.runAzureCmd(args);
+		return self.runAzureCmd(args)
+			.then(function (output) {
+				return JSON.parse(output.stdout);
+			});
+
 	};
 
 
