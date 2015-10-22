@@ -8,7 +8,7 @@ import Mustache from 'Mustache';
 import {assert} from 'chai';
 import {spawn} from 'child-process-promise';
 
-const verbose = true;
+const verbose = false;
 
 //
 // Run an Azure command, return a promise.
