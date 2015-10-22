@@ -2,10 +2,11 @@
   "name": "azure-api",
   "version": "0.1.1",
   "description": "A really simple promise-based NodeJS API for creation and configuration of Azure resources.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "eslint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublish": "make build",
+    "eslint": "make eslint",
+    "test": "make test"
   },
   "repository": {
     "type": "git",
