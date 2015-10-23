@@ -1,1 +1,5 @@
-module.exports = require('./azure-api.js');
+import * as azure from './azure-api.js';
+
+export default {
+  ...azure,
+};
