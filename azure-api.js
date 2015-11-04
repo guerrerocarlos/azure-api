@@ -18,7 +18,8 @@ export function runAzureCmd(args) {
   assert.isArray(args);
   assert(args.length > 0);
 
-  const azureCmd = path.join(__dirname, 'node_modules', '.bin', 'azure');
+  // const azureCmd = path.join(__dirname, 'node_modules', '.bin', 'azure');
+  const azureCmd = 'azure'
 
   const spawnOptions = {
     capture: [
@@ -86,15 +87,7 @@ export function listStorageContainers(clOptions) {
 export function deleteCluster(clOptions) {
 
   assert.isObject(clOptions);
-
-  assert.isString(clOptions.storageContainer);
-  assert.isString(clOptions.password);
-  assert.isString(clOptions.sshPassword);
-  assert.isString(clOptions.sshUserName);
-  assert.isString(clOptions.clusterName);
   assert.isString(clOptions.storageAccountName);
-  assert.isString(clOptions.storageAccountKey);
-  assert.isString(clOptions.userName);
   assert.isString(clOptions.location);
 
   if (verbose) {
@@ -105,11 +98,11 @@ export function deleteCluster(clOptions) {
     'hdinsight',
     'cluster',
     'delete',
-    clOptions.clusterName,
-    '--osType', clOptions.osType,
+    '--clusterName', clOptions.clusterName,
+    '--osType', 'linux',
     '--location', clOptions.location,
-    '--storageAccountName', clOptions.storageAccountName,
-    '--storageAccountKey', clOptions.storageAccountKey,
+    // '--storageAccountName', clOptions.storageAccountName,
+    // '--storageAccountKey', clOptions.storageAccountKey,
   ];
 
   return runAzureCmd(args);
@@ -254,7 +247,7 @@ export function createCluster(clOptions) {
     '--location', clOptions.location,
   ];
   if (clOptions.subscription) {
-    args.push('--suscription', clOptions.subscription);
+    args.push('--subscription', clOptions.subscription);
   }
   args.push('--json');
 
