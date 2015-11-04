@@ -1,6 +1,8 @@
 import path from 'path';
 import util from 'util';
 import fs from 'fs';
+import promisify from 'promisify-any';
+import npm from 'npm';
 import quote from 'quote';
 import linq from 'linq';
 import SshClient from 'ssh-promise';
@@ -13,13 +15,13 @@ const verbose = false;
 //
 // Run an Azure command, return a promise.
 //
-export function runAzureCmd(args) {
+export async function runAzureCmd(args) {
 
   assert.isArray(args);
   assert(args.length > 0);
 
-  // const azureCmd = path.join(__dirname, 'node_modules', '.bin', 'azure');
-  const azureCmd = 'azure'
+  await promisify(npm.load)({});
+  const azureCmd = path.join(npm.bin, 'azure');
 
   const spawnOptions = {
     capture: [
@@ -32,21 +34,19 @@ export function runAzureCmd(args) {
     console.log('Invoking command: "' + azureCmd + ' ' + args.map(arg => quote(arg)).join(' ') + '"');
   }
 
-  return spawn(azureCmd, args, spawnOptions)
-    .then(output => {
-      if (verbose) {
-        console.log(output.stdout);
-        console.log(output.stderr);
-      }
-      return output;
-    })
-    .catch(err => {
-      if (verbose) {
-        console.log(err.stdout);
-        console.log(err.stderr);
-      }
-      throw err;
-    });
+  try {
+    const output = spawn(azureCmd, args, spawnOptions);
+    if (verbose) {
+      console.log(output.stdout);
+      console.log(output.stderr);
+    }
+  } catch (err) {
+    if (verbose) {
+      console.log(err.stdout);
+      console.log(err.stderr);
+    }
+    throw err;
+  }
 }
 
 // azure hdinsight cluster delete --osType linux on-demand-cluster10 --location "East US"
@@ -56,7 +56,7 @@ export function runAzureCmd(args) {
 //
 // Delete an Azure cluster
 //
-export function listStorageContainers(clOptions) {
+export async function listStorageContainers(clOptions) {
 
   assert.isObject(clOptions);
 
@@ -76,15 +76,15 @@ export function listStorageContainers(clOptions) {
     '--json',
   ];
 
-  return runAzureCmd(args)
-    .then(output => JSON.parse(output.stdout));
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Delete an Azure cluster
 //
-export function deleteCluster(clOptions) {
+export async function deleteCluster(clOptions) {
 
   assert.isObject(clOptions);
   assert.isString(clOptions.storageAccountName);
@@ -101,18 +101,18 @@ export function deleteCluster(clOptions) {
     '--clusterName', clOptions.clusterName,
     '--osType', 'linux',
     '--location', clOptions.location,
-    // '--storageAccountName', clOptions.storageAccountName,
-    // '--storageAccountKey', clOptions.storageAccountKey,
+    '--json',
   ];
 
-  return runAzureCmd(args);
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Create an Azure cluster storage
 //
-export function createClusterStorage(clOptions) {
+export async function createClusterStorage(clOptions) {
 
 
   assert.isObject(clOptions);
@@ -129,7 +129,7 @@ export function createClusterStorage(clOptions) {
 
 
   if (verbose) {
-    console.log('Creatting network: ' + clOptions.containerName);
+    console.log('Creating network: ' + clOptions.containerName);
   }
 
   const args = [
@@ -139,16 +139,18 @@ export function createClusterStorage(clOptions) {
     clOptions.containerName,
     '--account-name', clOptions.storageAccountName,
     '--account-key', clOptions.storageAccountKey,
+    '--json',
   ];
 
-  return runAzureCmd(args);
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Get Jobs from Azure cluster
 //
-export function listJobs(clusterDnsName, userName, password) {
+export async function listJobs(clusterDnsName, userName, password) {
 
   const args = [
     'hdinsight',
@@ -160,15 +162,105 @@ export function listJobs(clusterDnsName, userName, password) {
     '--json',
   ];
 
-  return runAzureCmd(args)
-    .then(output => JSON.parse(output.stdout));
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
+}
+
+//
+// Start Copying Datasets from one container to another in another subscription
+//
+export async function copyDataset(clOptions) {
+  // example command:
+  // azure storage blob copy start --account-key cl3YyX33ASFbU2u5VkDYdiuH6nXmuEKOEBhbid1RnrvkN5VxUcZp1mTpsTi7iG4CtKNxAbtKd5i5zFfMOnPFRw== --account-name mamutstorage --source-uri https://mamutstorage.blob.core.windows.net/mamutcontainer/mamut/movistar/cdr/data/15090916.mmt.20150909170235.iq.bz2.avro.ad20252b-c209-4e2e-9387-26243ec119d9 --dest-account-name tidchile --dest-account-key CqIGm8MV3s/aLgeMVV529vXJI+NZ6UUuTT89xXYvgxnvIFwauAkljEMsxJCyM7E7QBiWVDHPjIyP24NwZYcV1A== --dest-container tidchile --json
+  // example output:
+  /* {
+    "container": "tidchile",
+    "blob": "mamut/movistar/cdr/data/15090916.mmt.20150909170235.iq.bz2.avro.ad20252b-c209-4e2e-9387-26243ec119d9",
+    "etag": "\"0x8D2E52C251D5F93\"",
+    "lastModified": "Wed, 04 Nov 2015 15:25:17 GMT",
+    "copyStatus": "pending",
+    "copyId": "0e5dfe2a-f32d-4279-9614-e82f44d724f8",
+    "requestId": "6ae06a9c-0001-005f-6815-17e6f7000000"
+  } */
+  const originAccountKey = clOptions.originAccountKey;
+  const originStorageAccountName = clOptions.originStorageAccountName;
+  const originURI = clOptions.originURI;
+  const destinationAccountKey = clOptions.destinationAccountKey;
+  const destinationStorageAccountName = clOptions.destinationStorageAccountName;
+  const destinationContainer = clOptions.destinationContainer;
+
+  const args = [
+    'storage',
+    'blob',
+    'copy',
+    'start',
+    '--account-key', originAccountKey,
+    '--account-name', originStorageAccountName,
+    '--source-uri', originURI,
+    '--dest-account-key', destinationAccountKey,
+    '--dest-account-name', destinationStorageAccountName,
+    '--dest-container', destinationContainer,
+    '--json',
+  ];
+
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
+}
+
+
+//
+// Start Copying Datasets from one container to another in another subscription
+//
+export async function copyDatasetStatus(clOptions) {
+  // example command:
+  // azure storage blob copy show --account-key CqIGm8MV3s/aLgeMVV529vXJI+NZ6UUuTT89xXYvgxnvIFwauAkljEMsxJCyM7E7QBiWVDHPjIyP24NwZYcV1A== --account-name tidchile --blob mamut/movistar/cdr/data/15090916.mmt.20150909170235.iq.bz2.avro.ad20252b-c209-4e2e-9387-26243ec119d9 --container tidchile --json
+  // example output:
+  /* {
+    "container": "tidchile",
+    "blob": "mamut/movistar/cdr/data/15090916.mmt.20150909170235.iq.bz2.avro.ad20252b-c209-4e2e-9387-26243ec119d9",
+    "metadata": {},
+    "etag": "\"0x8D2E48A1421DF28\"",
+    "lastModified": "Tue, 03 Nov 2015 20:05:10 GMT",
+    "contentType": "application/octet-stream",
+    "contentMD5": "2GrLAoFlxC+GOZyKXb+LUg==",
+    "contentLength": "355",
+    "blobType": "BlockBlob",
+    "leaseStatus": "unlocked",
+    "leaseState": "available",
+    "copySource": "https://mamutstorage.blob.core.windows.net/mamutcontainer/mamut/movistar/cdr/data/15090916.mmt.20150909170235.iq.bz2.avro.ad20252b-c209-4e2e-9387-26243ec119d9",
+    "copyStatus": "success",
+    "copyCompletionTime": "Tue, 03 Nov 2015 20:05:10 GMT",
+    "copyId": "218dc968-2497-4d1e-9324-0e49e6234267",
+    "copyProgress": "355/355",
+    "requestId": "e2779c4d-0001-0038-6073-165550000000"
+  }*/
+
+  const originAccountKey = clOptions.originAccountKey;
+  const originStorageAccountName = clOptions.originStorageAccountName;
+  const blob = clOptions.blob;
+  const container = clOptions.container;
+
+  const args = [
+    'storage',
+    'blob',
+    'copy',
+    'show',
+    '--account-key', originAccountKey,
+    '--account-name', originStorageAccountName,
+    '--blob', blob,
+    '--container', container,
+    '--json',
+  ];
+
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Get status json for specific Job from specific Azure cluster
 //
-export function jobStatus(clusterDnsName, userName, password, jobId) {
+export async function jobStatus(clusterDnsName, userName, password, jobId) {
 
   const args = [
     'hdinsight',
@@ -181,16 +273,15 @@ export function jobStatus(clusterDnsName, userName, password, jobId) {
     '--json',
   ];
 
-  return runAzureCmd(args)
-    .then(output => JSON.parse(output.stdout));
-
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Delete an Azure cluster storage
 //
-export function deleteClusterStorage(clOptions) {
+export async function deleteClusterStorage(clOptions) {
 
   if (verbose) {
     console.log('Deleting network: ' + clOptions.containerName);
@@ -203,16 +294,18 @@ export function deleteClusterStorage(clOptions) {
     clOptions.containerName,
     '--account-name', clOptions.storageAccountName,
     '--account-key', clOptions.storageAccountKey,
+    '--json',
   ];
 
-  return runAzureCmd(args);
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Create an Azure Cluster with an existing storage.
 //
-export function createCluster(clOptions) {
+export async function createCluster(clOptions) {
 
   assert.isObject(clOptions);
 
@@ -245,20 +338,20 @@ export function createCluster(clOptions) {
     '--dataNodeCount', '4',
     '--userName', clOptions.userName,
     '--location', clOptions.location,
+    '--json',
   ];
   if (clOptions.subscription) {
     args.push('--subscription', clOptions.subscription);
   }
-  args.push('--json');
 
-  return runAzureCmd(args);
-
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 //
 // Create an Azure network.
 //
-export function createNetwork(networkName, location) {
+export async function createNetwork(networkName, location) {
 
   assert.isString(networkName);
   assert.isString(location);
@@ -274,15 +367,17 @@ export function createNetwork(networkName, location) {
     networkName,
     '-l',
     location,
+    '--json',
   ];
 
-  return runAzureCmd(args);
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 //
 // Create an Azure VM in an existing network.
 //
-export function createVM(vmOptions) {
+export async function createVM(vmOptions) {
 
   assert.isObject(vmOptions);
   assert.isString(vmOptions.name);
@@ -338,6 +433,7 @@ export function createVM(vmOptions) {
     vmOptions.user,
     vmOptions.pass,
     '--ssh',
+    '--json',
     '--vm-name',
     vmName,
   ];
@@ -367,27 +463,26 @@ export function createVM(vmOptions) {
     args.push(vmOptions.vmSize);
   }
 
-  return runAzureCmd(args)
-    .then(() => {
-      if (!vmOptions.endpoints) {
-        return;
+  await runAzureCmd(args);
+
+  if (!vmOptions.endpoints) {
+    return;
+  }
+  linq.from(vmOptions.endpoints)
+    .aggregate(
+      Promise.resolve(),
+      (prevPromise, endpoint) => {
+        return prevPromise.then(() => {
+          return createEndPoint(vmOptions.name, endpoint);
+        });
       }
-      linq.from(vmOptions.endpoints)
-        .aggregate(
-          Promise.resolve(),
-          (prevPromise, endpoint) => {
-            return prevPromise.then(() => {
-              return createEndPoint(vmOptions.name, endpoint);
-            });
-          }
-        );
-    });
+    );
 }
 
 //
 // Create an endpoint on an existing Azure VM.
 //
-export function createEndPoint(vmName, endpoint) {
+export async function createEndPoint(vmName, endpoint) {
 
   assert.isString(vmName);
   assert.isObject(endpoint);
@@ -408,15 +503,17 @@ export function createEndPoint(vmName, endpoint) {
     endpoint.internalPort,
     '--name',
     endpoint.name,
+    '--json',
   ];
 
-  return runAzureCmd(args);
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 //
 // Get the status of a particular Azure Cluster.
 //
-export function getClusterStatus(clName) {
+export async function getClusterStatus(clName) {
 
   assert.isString(clName);
 
@@ -429,15 +526,15 @@ export function getClusterStatus(clName) {
     '--json',
   ];
 
-  return runAzureCmd(args)
-    .then(output => JSON.parse(output.stdout));
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 
 //
 // Get the status of a particular Azure VM.
 //
-export function getVmStatus(vmName) {
+export async function getVmStatus(vmName) {
 
   assert.isString(vmName);
 
@@ -448,8 +545,8 @@ export function getVmStatus(vmName) {
     '--json',
   ];
 
-  return runAzureCmd(args)
-    .then(output => JSON.parse(output.stdout));
+  const output = await runAzureCmd(args);
+  return JSON.parse(output.stdout);
 }
 
 //
