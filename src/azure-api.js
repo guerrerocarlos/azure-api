@@ -10,7 +10,7 @@ import Mustache from 'Mustache';
 import {assert} from 'chai';
 import {spawn} from 'child-process-promise';
 
-const verbose = false;
+const verbose = true;
 
 //
 // Run an Azure command, return a promise.
@@ -21,7 +21,8 @@ export async function runAzureCmd(args) {
   assert(args.length > 0);
 
   await promisify(npm.load)({});
-  const azureCmd = path.join(npm.bin, 'azure');
+  // const azureCmd = path.join(npm.bin, 'azure');
+  const azureCmd = 'azure';
 
   const spawnOptions = {
     capture: [
@@ -29,17 +30,18 @@ export async function runAzureCmd(args) {
       'stderr',
     ],
   };
-
   if (verbose) {
     console.log('Invoking command: "' + azureCmd + ' ' + args.map(arg => quote(arg)).join(' ') + '"');
   }
 
   try {
-    const output = spawn(azureCmd, args, spawnOptions);
+    const output = await spawn(azureCmd, args, spawnOptions);
+    console.log(output)
     if (verbose) {
       console.log(output.stdout);
       console.log(output.stderr);
     }
+    return output;
   } catch (err) {
     if (verbose) {
       console.log(err.stdout);
