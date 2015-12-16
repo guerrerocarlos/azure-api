@@ -7,7 +7,7 @@ clean:
 	rm -rf lib
 
 test: eslint
-	BABEL_DISABLE_CACHE=1 $(BIN)/mocha --compilers js:babel/register
+	BABEL_DISABLE_CACHE=1 $(BIN)/mocha --compilers js:babel-core/register
 
 eslint:
 	$(BIN)/eslint src
