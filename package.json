@@ -1,6 +1,6 @@
 {
   "name": "azure-api",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A really simple promise-based NodeJS API for creation and configuration of Azure resources.",
   "main": "lib/index.js",
   "scripts": {
