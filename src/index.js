@@ -1,5 +1,7 @@
-import 'babel-polyfill';
-import * as azure from './azure-api.js';
+if (typeof regeneratorRuntime === 'undefined') {
+  require('babel-polyfill');
+}
+const azure = require('./azure-api.js');
 
 export default {
   ...azure,
