@@ -1,12 +1,13 @@
 BIN=node_modules/.bin
 
-build: clean
+build: clean test
 	$(BIN)/babel src --out-dir lib
 
 clean:
 	rm -rf lib
 
 test: eslint
+	BABEL_DISABLE_CACHE=1 $(BIN)/mocha --compilers js:babel/register
 
 eslint:
 	$(BIN)/eslint src

@@ -1,4 +1,3 @@
-import path from 'path';
 import util from 'util';
 import fs from 'fs';
 import promisify from 'promisify-any';
@@ -6,7 +5,7 @@ import npm from 'npm';
 import quote from 'quote';
 import linq from 'linq';
 import SshClient from 'ssh-promise';
-import Mustache from 'Mustache';
+import Mustache from 'mustache';
 import {assert} from 'chai';
 import {spawn} from 'child-process-promise';
 
@@ -36,7 +35,7 @@ export async function runAzureCmd(args) {
 
   try {
     const output = await spawn(azureCmd, args, spawnOptions);
-    console.log(output)
+    console.log(output);
     if (verbose) {
       console.log(output.stdout);
       console.log(output.stderr);
